@@ -1,0 +1,6 @@
+# Files to ignore by git
+FHABs_data_archive.Rproj
+.Rproj.user
+Data/Icon\r
+Scripts/Icon\r
+Icon\r
