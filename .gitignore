@@ -1,6 +1,8 @@
 # Files to ignore by git
 FHABs_data_archive.Rproj
 .Rproj.user
+.Rhistory
 Data/Icon\r
 Scripts/Icon\r
 Icon\r
+FHABs_to_ODP_process.gslides
