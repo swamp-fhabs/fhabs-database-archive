@@ -14,12 +14,13 @@
     # The new_df comes from the Python script XX, which queries the SQL database and exports a .csv file with any updated bloom report information
     # The .csv file from the Python script is then sent to the FHABs interactive map and the Online Data Portal
     # FHABs data on Online Data Portal: https://data.ca.gov/dataset/surface-water-freshwater-harmful-algal-blooms
-  # input_path: the complete path (From home directory) to the new_df .csf file
+  # input_path: the complete path (From home directory) to the new_df .csv file
 
 ## make_unique_date_id() 
   # function creates unique record identities based on the date of the latest report
   # this function is called within the append_new_observations function
   # df= the FHABs database data frame
+
 make_unique_date_id <- function(df){
   ## Regex command can match date format mm/dd/yyy & yyy-dd-mm with 1 or 2 digit months and days and 2 or 4 digit years
   date_regex <- "[0-9]+(\\/|-)[0-9]{1,2}(\\/|-)[0-9]+"
@@ -89,47 +90,55 @@ append_new_observations <- function(new_df, input_path){
   require(lubridate)
   require(dataCompareR)
   
-  ## Read in the current data on the FHABs portal
-  curr.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") #%>% 
-  #mutate(AlgaeBloomReportID_Date= str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_"))
-  curr.df.id <- make_unique_date_id(curr.df)
+  ## Read in the data on the FHABs Open Data Portal
+  odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") 
+  
+  ## Create AlgaeBloomReportID_Unique column
+  odp.df.id <- make_unique_date_id(odp.df) 
   
   ## Read in the updated database that is exported from the Python script
-  new.df <- read_csv(file.path(input_path, new_df))
+  prev.df <- read_csv(file.path(input_path, prev_df))
   
-  ## Date format can be variable, this gets date columns in new.df int YYYY-MM-DD format.
-  if(any(is.na(as.Date(new.df$ObservationDate, format= "%Y-%m-%d"))) == FALSE){
-    new.df <- new.df# %>% 
-    #mutate(AlgaeBloomReportID_Date= str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_")) 
+  ## Date format can be variable, these two if statements get date columns in prev.df into YYYY-MM-DD format.
+  if(any(str_detect(prev.df$ObservationDate, "[0-9]+-[0-9]{1,2}-[0-9]+")) == TRUE){ # check for YYYY-MM-DD format
+    prev.df <- prev.df
   }
   
-  if(any(is.na(as.Date(new.df$ObservationDate, format= "%m/%d/%y"))) == FALSE){
-    new.df <- new.df %>% 
+  if(any(str_detect(prev.df$ObservationDate, "[0-9]+\\/[0-9]{1,2}\\/[0-9]+")) == TRUE){ # check for MM/DD/YYYY format
+    prev.df <- prev.df %>% 
       mutate(ObservationDate= mdy(.$ObservationDate),
-             BloomLastVerifiedOn= mdy(.$BloomLastVerifiedOn))# %>% 
-    #mutate(AlgaeBloomReportID_Date= str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_")) 
+             BloomLastVerifiedOn= mdy(.$BloomLastVerifiedOn))
   }
+  
+  
+  # if(any(is.na(as.Date(prev.df$ObservationDate, format= "%m/%d/%y"))) == FALSE){
+  #   prev.df2 <- prev.df %>% 
+  #     mutate(ObservationDate= mdy(.$ObservationDate),
+  #            BloomLastVerifiedOn= mdy(.$BloomLastVerifiedOn))# %>% 
+  #   #mutate(AlgaeBloomReportID_Date= str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_")) 
+  # }
   
   # Add unique ID column
-  new.df.id <- make_unique_date_id(new.df)
+  if(any(str_detect(names(prev.df), "AlgaeBloomReportID_Unique")) == FALSE){
+    prev.df.id <- make_unique_date_id(prev.df)
+  } else {
+    prev.df.id <- prev.df
+  }
   
-  ## Find rows with mis-matches. rCompare function in package dataCompareR
-  mis_matches <- rCompare(new.df.id, curr.df.id, keys= "AlgaeBloomReportID")
+  ## Find rows with mis-matches 
+  mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID") # rCompare function in package dataCompareR
   
-  ## Extract the mis-matched rows as a data frame
-  rows.to.append <- generateMismatchData(mis_matches, new.df.id, curr.df.id)[[str_c("new.df.id", "_mm")]]
-  names(rows.to.append) <- names(new.df.id)
+  ## Extract the mis-matched rows from prev.df (these are the rows that were overwritten when exported to Open Data Portal)
+  rows.to.append <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)[[str_c("prev.df.id", "_mm")]]
+  names(rows.to.append) <- names(prev.df.id)
   
-  length(names(rows.to.append))
-  length(names(curr.df.id))
-  
-  # Append the new rows to the current data frame
-  output.df <- rbind(curr.df.id, rows.to.append)
+  ## Append the rows mis-match rows from prev.df to the ODP data frame
+  output.df <- rbind(odp.df.id, rows.to.append) %>% 
+    arrange(AlgaeBloomReportID_Unique)
   return(output.df)
 }
 
-## the file FHAB_BloomReport_1_20190417_edit.csv has one record  changed (1935) compared to the current .csv
-new_fhabs_dataframe <- append_new_observations(new_df= "FHAB_BloomReport_1-20190403.csv", input_path= "Data")
+new_fhabs_dataframe <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190423.csv", input_path= "Data")
 
 ## Write CSV locally to computer
 output_path <- "Data"
