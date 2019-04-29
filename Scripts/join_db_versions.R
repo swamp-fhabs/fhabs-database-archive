@@ -85,7 +85,7 @@ make_unique_date_id <- function(df){
   str(df_with_ids)
 }
 
-append_new_observations <- function(new_df, input_path){
+append_new_observations <- function(prev_df, input_path){
   require(tidyverse)
   require(lubridate)
   require(dataCompareR)
@@ -138,10 +138,16 @@ append_new_observations <- function(new_df, input_path){
   return(output.df)
 }
 
-new_fhabs_dataframe <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190423.csv", input_path= "Data")
+## Define pathways
+shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
+inputPATH <- shared.drive.path
+most_recent_file <- max(list.files(inputPATH, pattern = "FHAB_BloomReport_1-.*csv"))
+output_path <- shared.drive.path
+
+## Run function
+new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
 
 ## Write CSV locally to computer
-output_path <- "Data"
 write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
 
 
