@@ -126,9 +126,29 @@ append_new_observations <- function(prev_df, input_path){
   }
   
   ## Find rows with mis-matches 
-  mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID") # rCompare function in package dataCompareR
-  
+  mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID_Unique") # rCompare function in package dataCompareR
+
   ## Extract the mis-matched rows from prev.df (these are the rows that were overwritten when exported to Open Data Portal)
+  mis_matches.df <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)
+  
+  ## Check to make sure the uniqueID is truly unique
+  ## If changes were made to a row, and no date information was updated then the ID_Unique will not have changed
+  check_duplicate_ID_Unique <- function(){
+  
+    ## Get vector of ID_Unique from prev.df that will be appended
+    mis_match.prev.ID_UNIQUE <- mis_matches.df[["prev.df.id_mm"]]$ALGAEBLOOMREPORTID_UNIQUE
+   
+    ## Check to see if the ID_Unique from prev.df are duplicated in odp.df (this would mean changes were made to the ODP, but were not represented with a new ID_Unique)
+    duplicate.row <- odp.df.id$AlgaeBloomReportID_Unique %in% mis_match.prev.ID_UNIQUE
+    duplicate.ID <- odp.df.id[duplicate.row, ]$AlgaeBloomReportID_Unique
+    
+    ## Replace the ID_Unique in odp.df with todays date, since no other date information was provided when the person changed the report
+    odp.df.id[duplicate.row, ]$AlgaeBloomReportID_Unique <- str_replace(duplicate.ID, "[^_]+$", format(Sys.Date(), "%Y%m%d"))
+    return(odp.df.id)
+  }
+  odp.df.id <- check_duplicate_ID_Unique()
+  
+  ## Reformat mis-matches into a dataframe
   rows.to.append <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)[[str_c("prev.df.id", "_mm")]]
   names(rows.to.append) <- names(prev.df.id)
   
@@ -138,14 +158,18 @@ append_new_observations <- function(prev_df, input_path){
   return(output.df)
 }
 
+
 ## Define pathways
 shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
+#inputPATH <- "Data"
 inputPATH <- shared.drive.path
 most_recent_file <- max(list.files(inputPATH, pattern = "FHAB_BloomReport_1-.*csv"))
 output_path <- shared.drive.path
 
 ## Run function
 new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
+#new_fhabs_dataframe <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190426.csv", input_path= inputPATH)
+
 
 ## Write CSV locally to computer
 write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
