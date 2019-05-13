@@ -91,8 +91,9 @@ append_new_observations <- function(prev_df, input_path){
   require(dataCompareR)
   
   ## Read in the data on the FHABs Open Data Portal
-  odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") 
-
+  #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") 
+  odp.df <- read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv")
+  
   ## Create AlgaeBloomReportID_Unique column
   odp.df.id <- make_unique_date_id(df= odp.df) 
   
@@ -118,12 +119,16 @@ append_new_observations <- function(prev_df, input_path){
   }
   
   #### 1) Find unique rows in prev.df.id, but not in odp.df.id ####
-  prev.unique.rows <- dataCompareR:::matchRows(odp.df.id, prev.df.id, indices= "AlgaeBloomReportID_Unique")[[3]][[2]][, 1] %>%   ## select 2nd element in 3rd element of output list. Then extract 1st column and transform to character vector
-    as.character(.)
+  # prev.unique.rows <- dataCompareR:::matchRows(prev.df.id, odp.df.id, indices= "AlgaeBloomReportID_Unique")[[3]][[1]][, 1] %>%   ## select 2nd element in 3rd element of output list. Then extract 1st column and transform to character vector
+  #  as.character(.)
 
-  prev.unique.df <- prev.df.id %>% 
-    filter(AlgaeBloomReportID_Unique %in% prev.unique.rows)
-  
+ 
+  # prev.unique.df <- prev.df.id %>% 
+  #  filter(AlgaeBloomReportID_Unique %in% prev.unique.rows)
+ 
+   prev.unique.df <-  prev.df.id[(prev.df.id$AlgaeBloomReportID_Unique %in% odp.df.id$AlgaeBloomReportID_Unique) == FALSE, ]
+   
+
   #### 2) Find rows with mis-matches ####
   mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID_Unique") # rCompare function in package dataCompareR
   
@@ -170,20 +175,20 @@ append_new_observations <- function(prev_df, input_path){
 }
 
 ## Define pathways
-shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
 #inputPATH <- "Data"
+shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
 inputPATH <- shared.drive.path
 most_recent_file <- max(list.files(inputPATH, pattern = "FHAB_BloomReport_1-.*csv"))
 output_path <- shared.drive.path
 
 ## Run function
-#new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
-new_fhabs_dataframe2 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190423_KBG.csv", input_path= inputPATH)
-
+new_fhabs_dataframe5 <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
+#new_fhabs_dataframe2 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190423.csv", input_path= inputPATH)
+#new_fhabs_dataframe3 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190429_KBG.csv", input_path= inputPATH)
+#new_fhabs_dataframe4 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190426.csv", input_path= inputPATH)
 
 ## Write CSV locally to computer
 write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
 
 
-
-
+#rCompare(new_fhabs_dataframe5, new_fhabs_dataframe3)
