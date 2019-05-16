@@ -182,13 +182,8 @@ most_recent_file <- max(list.files(inputPATH, pattern = "FHAB_BloomReport_1-.*cs
 output_path <- shared.drive.path
 
 ## Run function
-new_fhabs_dataframe5 <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
-#new_fhabs_dataframe2 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190423.csv", input_path= inputPATH)
-#new_fhabs_dataframe3 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190429_KBG.csv", input_path= inputPATH)
-#new_fhabs_dataframe4 <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190426.csv", input_path= inputPATH)
+new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
 
 ## Write CSV locally to computer
 write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
 
-
-#rCompare(new_fhabs_dataframe5, new_fhabs_dataframe3)
