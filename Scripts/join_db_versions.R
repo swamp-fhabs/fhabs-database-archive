@@ -86,19 +86,19 @@ make_unique_date_id <- function(df){
 }
 
 append_new_observations <- function(prev_df, input_path){
-  require(tidyverse)
-  require(lubridate)
-  require(dataCompareR)
+  suppressPackageStartupMessages(require(tidyverse))
+  suppressPackageStartupMessages(require(lubridate))
+  suppressPackageStartupMessages(require(dataCompareR))
   
   ## Read in the data on the FHABs Open Data Portal
   #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") 
-  odp.df <- read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv")
+  odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv"))
   
   ## Create AlgaeBloomReportID_Unique column
   odp.df.id <- make_unique_date_id(df= odp.df) 
   
   ## Read in the previous .csv file, with data prior to the current update
-  prev.df <- read_csv(file.path(input_path, prev_df))
+  prev.df <- suppressMessages(read_csv(file.path(input_path, prev_df)))
   
   ## Date format can be variable, these two if statements get date columns in prev.df into YYYY-MM-DD format.
   if(any(str_detect(prev.df$ObservationDate, "[0-9]+-[0-9]{1,2}-[0-9]+")) == TRUE){ # check for YYYY-MM-DD format
