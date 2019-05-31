@@ -100,7 +100,7 @@ append_new_observations <- function(prev_df, input_path){
   odp.df.id <- make_unique_date_id(df= odp.df)
   
   ## Read in the previous .csv file, with data prior to the current update
-  prev.df <- suppressMesssages(read_csv(file.path(input_path, prev_df))) %>% 
+  prev.df <- suppressMessages(read_csv(file.path(input_path, prev_df))) %>% 
     mutate(ObservationDate= as.character(ObservationDate),
            BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
   
@@ -144,42 +144,60 @@ append_new_observations <- function(prev_df, input_path){
   names(mis_matches.df[[1]]) <-  names(odp.df.id)
   names(mis_matches.df[[2]]) <-  names(odp.df.id)
   
+  mis_matches.df[[2]]$AlgaeBloomReportID_Unique
+  
+  
+  
+  
   ## Check to see if mismatched rows have already been documented in the prev.df 
   check_mismatch <- function(){
+    
+    
     # 1) Extract the row in odp.df.id of interest
     odp.row <- mis_matches.df[["odp.df.id_mm"]]
-    names(odp.row) <- names(odp.df.id)
+    
+    
     
     for(id in odp.row$AlgaeBloomReportID_Unique){
       # 2) Extract all the rows in prev.df.id with the same algalreportID
       prev.rows <- filter(prev.df.id, prev.df.id$AlgaeBloomReportID %in% str_replace(id, "_.*$", ""))
       
       # 3) Select the most recent of the extracted rows in prev.df.id
-      recent.entry <- filter(prev.rows, AlgaeBloomReportID_Unique == max(AlgaeBloomReportID_Unique))
+      recent.prev.entry <- filter(prev.rows, AlgaeBloomReportID_Unique == max(AlgaeBloomReportID_Unique))
       
       # 4) Remove the AlgalreportID_Unique column from the extracted odp.df.id and prev.df.id (these will always be different)
-      recent.entry2 <- select(recent.entry, -AlgaeBloomReportID_Unique)
+      recent.prev.entry2 <- select(recent.prev.entry, -AlgaeBloomReportID_Unique)
       odp.row2<- odp.row %>% 
         filter(AlgaeBloomReportID_Unique == id) %>% 
         select(-AlgaeBloomReportID_Unique)
       
       # 5) Compare the two rows
-      comp <- suppressMessages(rCompare(odp.row2, recent.entry2))
+      comp <- suppressMessages(rCompare(odp.row2, recent.prev.entry2))
+      
       
       # 6) If they are the same then delete the row from the odp.df.id, because it is a duplicate of the row in prev.df.id
-      if(is.null(suppressMessages(generateMismatchData(comp, odp.row2, recent.entry2)))){
-        ids.to.remove <- id
+      if(is.null(suppressMessages(generateMismatchData(comp, odp.row2, recent.prev.entry2)))){
+        # Initialize vector to store output
+        if(!exists("ids.to.remove")){
+          ids.to.remove <- as.character(NULL)
+        }
+        
+        ids.to.remove <- c(ids.to.remove, id)
       }
       if(exists("ids.to.remove")){
         odp.row.export <- filter(odp.row, odp.row$AlgaeBloomReportID_Unique %in% ids.to.remove)
       } 
     }
+    
+    ## Output messages
     num_mismatches <-  length(odp.row$AlgaeBloomReportID_Unique)
     num_incorrect <- ifelse(exists("ids.to.remove"), length(ids.to.remove), 0)
     message(paste("Number of mismatched rows= ", num_mismatches, 
-                  "\nNumber already documented and needing to be removed= ", num_incorrect, 
-                  "\nAll mismatches are novel. No rows to remove"))
+                  "\nNumber already documented and needing to be removed= ", num_incorrect))
+    if(num_incorrect ==0){
+      message("All mismatches are novel. No rows to remove")}
     
+    ## Return vector of UniqueIDs for rows to remove
     if(exists("ids.to.remove") == FALSE){
       odp.row.export <- "All mismatches are novel. No rows to remove"
     }
@@ -187,8 +205,8 @@ append_new_observations <- function(prev_df, input_path){
   }
   rows.to.remove <- check_mismatch()
   
-  if(rows.to.remove != "All mismatches are novel. No rows to remove"){
-    odp.df.id <- filter(odp.df.id, !(AlgaeBloomReportID_Unique %in% rows.to.remove))
+  if(all(rows.to.remove != "All mismatches are novel. No rows to remove")){
+    odp.df.id <- filter(odp.df.id, !(AlgaeBloomReportID_Unique %in% rows.to.remove$AlgaeBloomReportID_Unique))
   }
   
   
@@ -242,10 +260,10 @@ output_path <- shared.drive.path
 
 ## Run function
 new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
-#new_fhabs_dataframe <- append_new_observations(prev_df= "FHAB_BloomReport_1-20190524.csv", input_path= inputPATH)
 
 
 ## Write CSV locally to computer
-write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
+write_csv(new_fhabs_dataframe2, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
+
 
 
