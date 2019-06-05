@@ -263,7 +263,7 @@ new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_
 
 
 ## Write CSV locally to computer
-write_csv(new_fhabs_dataframe2, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
+write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
 
 
 
