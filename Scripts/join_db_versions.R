@@ -123,18 +123,9 @@ append_new_observations <- function(prev_df, input_path){
   }
   
   #### 1) Find unique rows in prev.df.id, but not in odp.df.id ####
-  # prev.unique.rows <- dataCompareR:::matchRows(prev.df.id, odp.df.id, indices= "AlgaeBloomReportID_Unique")[[3]][[1]][, 1] %>%   ## select 2nd element in 3rd element of output list. Then extract 1st column and transform to character vector
-  #  as.character(.)
-
- 
-  # prev.unique.df <- prev.df.id %>% 
-  #  filter(AlgaeBloomReportID_Unique %in% prev.unique.rows)
- 
-   prev.unique.df <-  prev.df.id[(prev.df.id$AlgaeBloomReportID_Unique %in% odp.df.id$AlgaeBloomReportID_Unique) == FALSE, ]
+  prev.unique.df <-  prev.df.id[(prev.df.id$AlgaeBloomReportID_Unique %in% odp.df.id$AlgaeBloomReportID_Unique) == FALSE, ]
    
 
-
-  
   #### 2) Find rows with mis-matches ####
   mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID_Unique") # rCompare function in package dataCompareR
   
@@ -144,10 +135,7 @@ append_new_observations <- function(prev_df, input_path){
   names(mis_matches.df[[1]]) <-  names(odp.df.id)
   names(mis_matches.df[[2]]) <-  names(odp.df.id)
   
-  mis_matches.df[[2]]$AlgaeBloomReportID_Unique
-  
-  
-  
+  #### 3) Check the outputs ####
   
   ## Check to see if mismatched rows have already been documented in the prev.df 
   check_mismatch <- function(){
@@ -205,7 +193,7 @@ append_new_observations <- function(prev_df, input_path){
   }
   rows.to.remove <- check_mismatch()
   
-  if(all(rows.to.remove != "All mismatches are novel. No rows to remove")){
+  if(all(rows.to.remove != "All mismatches are novel. No rows to remove", na.rm=TRUE)){
     odp.df.id <- filter(odp.df.id, !(AlgaeBloomReportID_Unique %in% rows.to.remove$AlgaeBloomReportID_Unique))
   }
   
@@ -232,11 +220,11 @@ append_new_observations <- function(prev_df, input_path){
   }
   
 
-  ## Append the rows mis-match rows from prev.df to the ODP data frame
-     # odp.df.id.no.duplicates= most recent data with no IDs that match prev.df.id
-     # prev.unique.df= All the previously recorded rows that have since been overwritten by the database
-     # mis_matches.df[["prev.df.id_mm"]]= the rows that had the same IDs between odp.df.id and prev.df.id, but contained different data
-       # the check_duplicate_ID_Unique function updated IDs in the odp.df.id data frame, so that now there are unique IDs for all rows.
+  #### 4) Append the rows mis-match rows from prev.df to the ODP data frame ####
+          # odp.df.id.no.duplicates= most recent data with no IDs that match prev.df.id
+          # prev.unique.df= All the previously recorded rows that have since been overwritten by the database
+          # mis_matches.df[["prev.df.id_mm"]]= the rows that had the same IDs between odp.df.id and prev.df.id, but contained different data
+          # the check_duplicate_ID_Unique function updated IDs in the odp.df.id data frame, so that now there are unique IDs for all rows.
   
   if(exists("mis_matches.df") == TRUE){
     output.df <- rbind(odp.df.id.no.duplicates, prev.unique.df, mis_matches.df[["prev.df.id_mm"]]) %>% 
