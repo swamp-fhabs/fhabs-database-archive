@@ -91,16 +91,25 @@ append_new_observations <- function(prev_df, input_path){
   require(dataCompareR)
   
   ## Read in the data on the FHABs Open Data Portal
+<<<<<<< HEAD
   #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") 
   #odp.df <- read_csv("/Users/kbg/Downloads/FHAB_BloomReport_2.csv")
   odp.df <- read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv")
   
+=======
+  #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_2.csv") 
+  odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv")) %>% 
+    mutate(ObservationDate= as.character(ObservationDate),
+           BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
+>>>>>>> upstream/master
    
   ## Create AlgaeBloomReportID_Unique column
-  odp.df.id <- make_unique_date_id(df= odp.df) 
+  odp.df.id <- make_unique_date_id(df= odp.df)
   
   ## Read in the previous .csv file, with data prior to the current update
-  prev.df <- read_csv(file.path(input_path, prev_df))
+  prev.df <- suppressMessages(read_csv(file.path(input_path, prev_df))) %>% 
+    mutate(ObservationDate= as.character(ObservationDate),
+           BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
   
   ## Date format can be variable, these two if statements get date columns in prev.df into YYYY-MM-DD format.
   if(any(str_detect(prev.df$ObservationDate, "[0-9]+-[0-9]{1,2}-[0-9]+")) == TRUE){ # check for YYYY-MM-DD format
@@ -121,14 +130,7 @@ append_new_observations <- function(prev_df, input_path){
   }
   
   #### 1) Find unique rows in prev.df.id, but not in odp.df.id ####
-  # prev.unique.rows <- dataCompareR:::matchRows(prev.df.id, odp.df.id, indices= "AlgaeBloomReportID_Unique")[[3]][[1]][, 1] %>%   ## select 2nd element in 3rd element of output list. Then extract 1st column and transform to character vector
-  #  as.character(.)
-
- 
-  # prev.unique.df <- prev.df.id %>% 
-  #  filter(AlgaeBloomReportID_Unique %in% prev.unique.rows)
- 
-   prev.unique.df <-  prev.df.id[(prev.df.id$AlgaeBloomReportID_Unique %in% odp.df.id$AlgaeBloomReportID_Unique) == FALSE, ]
+  prev.unique.df <-  prev.df.id[(prev.df.id$AlgaeBloomReportID_Unique %in% odp.df.id$AlgaeBloomReportID_Unique) == FALSE, ]
    
 
   #### 2) Find rows with mis-matches ####
@@ -137,6 +139,7 @@ append_new_observations <- function(prev_df, input_path){
   ## Extract the mis-matched rows from prev.df (these are the rows that have the same AlgaeBloomReportID_Unique as prev.df.id, but have changes made in the row)
      ## This may return no results, in which case all the changes are recorded in the prev.unique.df
   mis_matches.df <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)
+<<<<<<< HEAD
   
   ## Check to see if mismatched rows have already been documented in the prev.df 
   check_mismatch <- function(){
@@ -170,10 +173,82 @@ append_new_observations <- function(prev_df, input_path){
   ## If changes were made to a row, and no date information was updated then the ID_Unique will not have changed
   if(is.null(mis_matches.df) != TRUE){
 
+=======
+  names(mis_matches.df[[1]]) <-  names(odp.df.id)
+  names(mis_matches.df[[2]]) <-  names(odp.df.id)
+  
+  #### 3) Check the outputs ####
+  
+  ## Check to see if mismatched rows have already been documented in the prev.df 
+  check_mismatch <- function(){
+    
+    
+    # 1) Extract the row in odp.df.id of interest
+    odp.row <- mis_matches.df[["odp.df.id_mm"]]
+    
+    
+    
+    for(id in odp.row$AlgaeBloomReportID_Unique){
+      # 2) Extract all the rows in prev.df.id with the same algalreportID
+      prev.rows <- filter(prev.df.id, prev.df.id$AlgaeBloomReportID %in% str_replace(id, "_.*$", ""))
+      
+      # 3) Select the most recent of the extracted rows in prev.df.id
+      recent.prev.entry <- filter(prev.rows, AlgaeBloomReportID_Unique == max(AlgaeBloomReportID_Unique))
+      
+      # 4) Remove the AlgalreportID_Unique column from the extracted odp.df.id and prev.df.id (these will always be different)
+      recent.prev.entry2 <- select(recent.prev.entry, -AlgaeBloomReportID_Unique)
+      odp.row2<- odp.row %>% 
+        filter(AlgaeBloomReportID_Unique == id) %>% 
+        select(-AlgaeBloomReportID_Unique)
+      
+      # 5) Compare the two rows
+      comp <- suppressMessages(rCompare(odp.row2, recent.prev.entry2))
+      
+      
+      # 6) If they are the same then delete the row from the odp.df.id, because it is a duplicate of the row in prev.df.id
+      if(is.null(suppressMessages(generateMismatchData(comp, odp.row2, recent.prev.entry2)))){
+        # Initialize vector to store output
+        if(!exists("ids.to.remove")){
+          ids.to.remove <- as.character(NULL)
+        }
+        
+        ids.to.remove <- c(ids.to.remove, id)
+      }
+      if(exists("ids.to.remove")){
+        odp.row.export <- filter(odp.row, odp.row$AlgaeBloomReportID_Unique %in% ids.to.remove)
+      } 
+    }
+    
+    ## Output messages
+    num_mismatches <-  length(odp.row$AlgaeBloomReportID_Unique)
+    num_incorrect <- ifelse(exists("ids.to.remove"), length(ids.to.remove), 0)
+    message(paste("Number of mismatched rows= ", num_mismatches, 
+                  "\nNumber already documented and needing to be removed= ", num_incorrect))
+    if(num_incorrect ==0){
+      message("All mismatches are novel. No rows to remove")}
+    
+    ## Return vector of UniqueIDs for rows to remove
+    if(exists("ids.to.remove") == FALSE){
+      odp.row.export <- "All mismatches are novel. No rows to remove"
+    }
+    return(odp.row.export)
+  }
+  rows.to.remove <- check_mismatch()
+  
+  if(all(rows.to.remove != "All mismatches are novel. No rows to remove", na.rm=TRUE)){
+    odp.df.id <- filter(odp.df.id, !(AlgaeBloomReportID_Unique %in% rows.to.remove$AlgaeBloomReportID_Unique))
+  }
+  
+  
+  ## Check to make sure the uniqueID is truly unique
+  ## If changes were made to a row, and no date information was updated then the ID_Unique will not have changed
+  if(is.null(mis_matches.df) != TRUE){
+    
+>>>>>>> upstream/master
     check_duplicate_ID_Unique <- function(){
       
       ## Get vector of ID_Unique from prev.df that will be appended
-      mis_match.prev.ID_UNIQUE <- mis_matches.df[["prev.df.id_mm"]]$ALGAEBLOOMREPORTID_UNIQUE
+      mis_match.prev.ID_UNIQUE <- mis_matches.df[["prev.df.id_mm"]]$AlgaeBloomReportID_Unique
       
       ## Check to see if the ID_Unique from prev.df are duplicated in odp.df (this would mean changes were made to the ODP, but were not represented with a new ID_Unique)
       duplicate.row <- odp.df.id$AlgaeBloomReportID_Unique %in% mis_match.prev.ID_UNIQUE
@@ -183,22 +258,24 @@ append_new_observations <- function(prev_df, input_path){
       odp.df.id[duplicate.row, ]$AlgaeBloomReportID_Unique <- str_replace(duplicate.ID, "[^_]+$", format(Sys.Date(), "%Y%m%d"))
       return(odp.df.id)
     }
-    odp.df.id <- check_duplicate_ID_Unique()
-    
-    ## Reformat mis-matches into a dataframe
-    mismatch.rows <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)[[str_c("prev.df.id", "_mm")]]
-    names(mismatch.rows) <- names(prev.df.id)
+    odp.df.id.no.duplicates <- check_duplicate_ID_Unique()
+ 
   }
   
+
+  #### 4) Append the rows mis-match rows from prev.df to the ODP data frame ####
+          # odp.df.id.no.duplicates= most recent data with no IDs that match prev.df.id
+          # prev.unique.df= All the previously recorded rows that have since been overwritten by the database
+          # mis_matches.df[["prev.df.id_mm"]]= the rows that had the same IDs between odp.df.id and prev.df.id, but contained different data
+          # the check_duplicate_ID_Unique function updated IDs in the odp.df.id data frame, so that now there are unique IDs for all rows.
   
-  ## Append the rows mis-match rows from prev.df to the ODP data frame
-  if(exists("mismatch.rows") == TRUE){
-    output.df <- rbind(odp.df.id, prev.unique.df, mismatch.rows) %>% 
+  if(exists("mis_matches.df") == TRUE){
+    output.df <- rbind(odp.df.id.no.duplicates, prev.unique.df, mis_matches.df[["prev.df.id_mm"]]) %>% 
       arrange(AlgaeBloomReportID_Unique)
   } 
   
-  if(exists("mismatch.rows") == FALSE){
-    output.df <- rbind(odp.df.id, prev.unique.df) %>% 
+  if(exists("mis_matches.df") == FALSE){
+    output.df <- rbind(odp.df.id.no.duplicates, prev.unique.df) %>% 
       arrange(AlgaeBloomReportID_Unique)
   }
 
@@ -206,20 +283,29 @@ append_new_observations <- function(prev_df, input_path){
 }
 
 ## Define pathways
+<<<<<<< HEAD
 #inputPATH <- "Data"
 #inputPATH <- "/Users/kbg/Downloads"
+=======
+>>>>>>> upstream/master
 shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
 inputPATH <- shared.drive.path
 most_recent_file <- max(list.files(inputPATH, pattern = "FHAB_BloomReport_1-.*csv"))
 output_path <- shared.drive.path
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> upstream/master
 ## Run function
 new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
 #prev_df= "Test2.csv"
 #input_path= inputPATH
 
+
 ## Write CSV locally to computer
 write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
+
+
 
