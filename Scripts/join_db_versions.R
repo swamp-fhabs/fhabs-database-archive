@@ -98,7 +98,7 @@ append_new_observations <- function(prev_df, input_path){
   
 =======
   #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_2.csv") 
-  odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv")) %>% 
+  odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport_Archive.csv")) %>% 
     mutate(ObservationDate= as.character(ObservationDate),
            BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
 >>>>>>> upstream/master
