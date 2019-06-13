@@ -67,8 +67,8 @@ if __name__ == "__main__":
 	###########################
 	printable = set(string.printable) - set('|"\`\t\r\n\f\v')
 	### you can change this to point to a different location
-	first = 'C:\\Users\\%s\\Documents' % getpass.getuser()
-	path = os.path.join(first, 'FHAB_BloomReport')
+	first = 'S:\\OIMA\\SHARED\\Freshwater HABs Program\\FHABs Database'
+	path = os.path.join(first, 'Python_Output')
 	if not os.path.isdir(path):
 		os.mkdir(path)
 	### name of output file

@@ -91,17 +91,10 @@ append_new_observations <- function(prev_df, input_path){
   require(dataCompareR)
   
   ## Read in the data on the FHABs Open Data Portal
-<<<<<<< HEAD
-  #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_1.csv") 
-  #odp.df <- read_csv("/Users/kbg/Downloads/FHAB_BloomReport_2.csv")
-  odp.df <- read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport.csv")
-  
-=======
   #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_2.csv") 
   odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport_Archive.csv")) %>% 
     mutate(ObservationDate= as.character(ObservationDate),
            BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
->>>>>>> upstream/master
    
   ## Create AlgaeBloomReportID_Unique column
   odp.df.id <- make_unique_date_id(df= odp.df)
@@ -139,41 +132,6 @@ append_new_observations <- function(prev_df, input_path){
   ## Extract the mis-matched rows from prev.df (these are the rows that have the same AlgaeBloomReportID_Unique as prev.df.id, but have changes made in the row)
      ## This may return no results, in which case all the changes are recorded in the prev.unique.df
   mis_matches.df <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)
-<<<<<<< HEAD
-  
-  ## Check to see if mismatched rows have already been documented in the prev.df 
-  check_mismatch <- function(){
-    # 1) Extract the row in odp.df.id of interest
-    odp.row <- mis_matches.df[["odp.df.id_mm"]]
-    names(odp.row) <- names(odp.df.id)
-    # 2) Extract all the rows in prev.df.id with the same algalreportID
-    prev.rows <- filter(prev.df.id, prev.df.id$AlgaeBloomReportID %in% mis_matches.df[["odp.df.id_mm"]]$ALGAEBLOOMREPORTID)
-    # 3) Select the most recent of the extracted rows in prev.df.id
-    recent.entry <- filter(prev.rows, AlgaeBloomReportID_Unique == max(AlgaeBloomReportID_Unique))
-    # 4) Remove the AlgalreportID_Unique column from the extracted odp.df.id and prev.df.id (these will always be different)
-    recent.entry2 <- select(recent.entry, -AlgaeBloomReportID_Unique)
-    odp.row2<- select(odp.row, -AlgaeBloomReportID_Unique)
-    # 5) Compare the two rows
-    comp <- rCompare(odp.row2, recent.entry2)
-   
-    # 6) If they are the same then delete the row from the odp.df.id, because it is a duplicate of the row in prev.df.id
-    if(is.null(generateMismatchData(comp, odp.row2, recent.entry2))){
-    odp.df.id <- odp.df.id %>% 
-      filter(AlgaeBloomReportID_Unique != odp.row$AlgaeBloomReportID_Unique)
-    message("Row mismatches are already captured in previous file")
-    } else {
-      # 7) if they are different then the row in odp.df.id is new
-      message("Row mismatches identified are correct and will be deleted")
-    }
-    return(odp.df.id)
-}
-  odp.df.id <- check_mismatch()
-
-  ## Check to make sure the uniqueID is truly unique
-  ## If changes were made to a row, and no date information was updated then the ID_Unique will not have changed
-  if(is.null(mis_matches.df) != TRUE){
-
-=======
   names(mis_matches.df[[1]]) <-  names(odp.df.id)
   names(mis_matches.df[[2]]) <-  names(odp.df.id)
   
@@ -244,7 +202,6 @@ append_new_observations <- function(prev_df, input_path){
   ## If changes were made to a row, and no date information was updated then the ID_Unique will not have changed
   if(is.null(mis_matches.df) != TRUE){
     
->>>>>>> upstream/master
     check_duplicate_ID_Unique <- function(){
       
       ## Get vector of ID_Unique from prev.df that will be appended
@@ -283,25 +240,14 @@ append_new_observations <- function(prev_df, input_path){
 }
 
 ## Define pathways
-<<<<<<< HEAD
-#inputPATH <- "Data"
-#inputPATH <- "/Users/kbg/Downloads"
-=======
->>>>>>> upstream/master
 shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
 inputPATH <- shared.drive.path
 most_recent_file <- max(list.files(inputPATH, pattern = "FHAB_BloomReport_1-.*csv"))
 output_path <- shared.drive.path
 
 
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream/master
 ## Run function
 new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_path= inputPATH)
-#prev_df= "Test2.csv"
-#input_path= inputPATH
 
 
 ## Write CSV locally to computer
