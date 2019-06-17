@@ -61,22 +61,41 @@ make_unique_date_id <- function(df){
   
   
   # Create a unique ID by concatenating the AlgaeBloomReportID with the date of most recent observation
-  unique_IDs <- id_df_t %>%   
-    mutate(AlgaeBloomReportID_Unique= if_else((is.na(.$Latest_v_ObsDate) & is.na(.$ObsDate_v_BloomVer) & !is.na(.$ObservationDate)), 
+  unique_IDs <- id_df_t %>% 
+    mutate(AlgaeBloomReportID_Unique= if_else((is.na(.$Latest_v_ObsDate) & is.na(.$ObsDate_v_BloomVer) & !is.na(.$ObservationDate)), #1
                                               str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_"),
-                                              if_else((is.na(.$Latest_v_ObsDate) & .$ObsDate_v_BloomVer == TRUE), 
-                                                      str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_"),
-                                                      if_else((is.na(.$Latest_v_ObsDate) & .$ObsDate_v_BloomVer == FALSE),
-                                                              str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"), 
-                                                              if_else((.$Latest_v_ObsDate == TRUE & .$Latest_v_BloomVer == TRUE & !is.na(.$LatestIncident)), 
-                                                                      str_c(.$AlgaeBloomReportID, str_replace_all(.$LatestIncident, "-", ""), sep= "_"), 
-                                                                      if_else((.$Latest_v_BloomVer == FALSE & .$ObsDate_v_BloomVer == FALSE), 
-                                                                              str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"), 
-                                                                              if_else((.$Latest_v_BloomVer == TRUE & .$ObsDate_v_BloomVer == TRUE & !is.na(.$BloomLastVerifiedOn)), 
-                                                                                      str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"),
-                                                                                      str_c(.$AlgaeBloomReportID, "XXXXXXXX", sep= "_")))))))) %>% 
-  mutate(AlgaeBloomReportID_Unique= as.character(AlgaeBloomReportID_Unique))
+                                              if_else(.$Latest_v_ObsDate == TRUE & is.na(.$BloomLastVerifiedOn) & !is.na(.$ObservationDate), #2
+                                                      str_c(.$AlgaeBloomReportID, str_replace_all(.$LatestIncident, "-", ""), sep= "_"),
+                                                      if_else((is.na(.$Latest_v_ObsDate) & .$ObsDate_v_BloomVer == TRUE), #3
+                                                              str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_"),
+                                                              if_else((is.na(.$Latest_v_ObsDate) & .$ObsDate_v_BloomVer == FALSE), #4
+                                                                      str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"), 
+                                                                      if_else((.$Latest_v_ObsDate == TRUE & .$Latest_v_BloomVer == TRUE & !is.na(.$LatestIncident)), #5
+                                                                              str_c(.$AlgaeBloomReportID, str_replace_all(.$LatestIncident, "-", ""), sep= "_"), 
+                                                                              if_else((.$Latest_v_BloomVer == FALSE & .$ObsDate_v_BloomVer == FALSE), #6
+                                                                                      str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"), 
+                                                                                      if_else((.$Latest_v_BloomVer == TRUE & .$ObsDate_v_BloomVer == TRUE & !is.na(.$BloomLastVerifiedOn)), #7
+                                                                                              str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"),
+                                                                                              str_c(.$AlgaeBloomReportID, "XXXXXXXX", sep= "_"))))))))) %>% 
+    mutate(AlgaeBloomReportID_Unique= as.character(AlgaeBloomReportID_Unique))
   
+  
+  # unique_IDs <- id_df_t %>%
+  #   mutate(AlgaeBloomReportID_Unique= if_else((is.na(.$Latest_v_ObsDate) & is.na(.$ObsDate_v_BloomVer) & !is.na(.$ObservationDate)),
+  #                                             str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_"),
+  #                                             if_else((is.na(.$Latest_v_ObsDate) & .$ObsDate_v_BloomVer == TRUE),
+  #                                                     str_c(.$AlgaeBloomReportID, str_replace_all(.$ObservationDate, "-", ""), sep= "_"),
+  #                                                     if_else((is.na(.$Latest_v_ObsDate) & .$ObsDate_v_BloomVer == FALSE),
+  #                                                             str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"),
+  #                                                             if_else((.$Latest_v_ObsDate == TRUE & .$Latest_v_BloomVer == TRUE & !is.na(.$LatestIncident)),
+  #                                                                     str_c(.$AlgaeBloomReportID, str_replace_all(.$LatestIncident, "-", ""), sep= "_"),
+  #                                                                     if_else((.$Latest_v_BloomVer == FALSE & .$ObsDate_v_BloomVer == FALSE),
+  #                                                                             str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"),
+  #                                                                             if_else((.$Latest_v_BloomVer == TRUE & .$ObsDate_v_BloomVer == TRUE & !is.na(.$BloomLastVerifiedOn)),
+  #                                                                                     str_c(.$AlgaeBloomReportID, str_replace_all(.$BloomLastVerifiedOn, "-", ""), sep= "_"),
+  #                                                                                     str_c(.$AlgaeBloomReportID, "XXXXXXXX", sep= "_")))))))) %>%
+  #   mutate(AlgaeBloomReportID_Unique= as.character(AlgaeBloomReportID_Unique))
+
   
   ## Combine unique IDs with original data frame
   df_with_ids <-  data.frame(AlgaeBloomReportID_Unique= unique_IDs$AlgaeBloomReportID_Unique, df, stringsAsFactors = FALSE)# %>% 
@@ -122,6 +141,7 @@ append_new_observations <- function(prev_df, input_path){
     prev.df.id <- prev.df
   }
   
+  message("Comparing data frames")
   #### 1) Find unique rows in prev.df.id, but not in odp.df.id ####
   prev.unique.df <-  prev.df.id[(prev.df.id$AlgaeBloomReportID_Unique %in% odp.df.id$AlgaeBloomReportID_Unique) == FALSE, ]
    
@@ -136,6 +156,7 @@ append_new_observations <- function(prev_df, input_path){
   names(mis_matches.df[[2]]) <-  names(odp.df.id)
   
   #### 3) Check the outputs ####
+  message("\nChecking the comparisons for duplicates and previous documentation")
   
   ## Check to see if mismatched rows have already been documented in the prev.df 
   check_mismatch <- function(){
@@ -226,6 +247,7 @@ append_new_observations <- function(prev_df, input_path){
           # mis_matches.df[["prev.df.id_mm"]]= the rows that had the same IDs between odp.df.id and prev.df.id, but contained different data
           # the check_duplicate_ID_Unique function updated IDs in the odp.df.id data frame, so that now there are unique IDs for all rows.
   
+  message("\nExporting new data frame")
   if(exists("mis_matches.df") == TRUE){
     output.df <- rbind(odp.df.id.no.duplicates, prev.unique.df, mis_matches.df[["prev.df.id_mm"]]) %>% 
       arrange(AlgaeBloomReportID_Unique)
@@ -238,6 +260,8 @@ append_new_observations <- function(prev_df, input_path){
 
   return(output.df)
 }
+
+
 
 ## Define pathways
 shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
