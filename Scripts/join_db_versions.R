@@ -111,17 +111,21 @@ append_new_observations <- function(prev_df, input_path){
   
   ## Read in the data on the FHABs Open Data Portal
   #odp.df <- read_csv("https://data.ca.gov/sites/default/files/FHAB_BloomReport_2.csv") 
-  odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport_Archive.csv")) %>% 
-    mutate(ObservationDate= as.character(ObservationDate),
-           BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
-   
+  odp.df <- suppressMessages(read_csv("S:/OIMA/SHARED/Freshwater HABs Program/FHABs Database/Python_Output/FHAB_BloomReport_Archive.csv", 
+                                      col_types = cols(.default = "c"))) %>%
+     mutate(Latitude= as.numeric(Latitude),
+            Longitude= as.numeric(Longitude),
+            ApprovedforPost= as.logical(ApprovedforPost))
+     
   ## Create AlgaeBloomReportID_Unique column
   odp.df.id <- make_unique_date_id(df= odp.df)
   
   ## Read in the previous .csv file, with data prior to the current update
-  prev.df <- suppressMessages(read_csv(file.path(input_path, prev_df))) %>% 
-    mutate(ObservationDate= as.character(ObservationDate),
-           BloomLastVerifiedOn= as.character(BloomLastVerifiedOn))
+  prev.df <- suppressMessages(read_csv(file.path(input_path, prev_df), 
+                                       col_types = cols(.default = "c"))) %>% 
+    mutate(Latitude= as.numeric(Latitude),
+           Longitude= as.numeric(Longitude),
+           ApprovedforPost= as.logical(ApprovedforPost))
   
   ## Date format can be variable, these two if statements get date columns in prev.df into YYYY-MM-DD format.
   if(any(str_detect(prev.df$ObservationDate, "[0-9]+-[0-9]{1,2}-[0-9]+")) == TRUE){ # check for YYYY-MM-DD format
@@ -147,8 +151,8 @@ append_new_observations <- function(prev_df, input_path){
    
 
   #### 2) Find rows with mis-matches ####
-  mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID_Unique") # rCompare function in package dataCompareR
-  
+  mis_matches <- rCompare(prev.df.id, odp.df.id, keys= "AlgaeBloomReportID_Unique", roundDigits= 4) # rCompare function in package dataCompareR
+
   ## Extract the mis-matched rows from prev.df (these are the rows that have the same AlgaeBloomReportID_Unique as prev.df.id, but have changes made in the row)
      ## This may return no results, in which case all the changes are recorded in the prev.unique.df
   mis_matches.df <- generateMismatchData(mis_matches, prev.df.id, odp.df.id)
@@ -164,8 +168,6 @@ append_new_observations <- function(prev_df, input_path){
     
     # 1) Extract the row in odp.df.id of interest
     odp.row <- mis_matches.df[["odp.df.id_mm"]]
-    
-    
     
     for(id in odp.row$AlgaeBloomReportID_Unique){
       # 2) Extract all the rows in prev.df.id with the same algalreportID
@@ -262,7 +264,6 @@ append_new_observations <- function(prev_df, input_path){
 }
 
 
-
 ## Define pathways
 shared.drive.path <- file.path("S:", "OIMA", "SHARED", "Freshwater HABs Program", "FHABs Database") # Path to shared S drive
 inputPATH <- shared.drive.path
@@ -276,6 +277,7 @@ new_fhabs_dataframe <- append_new_observations(prev_df= most_recent_file, input_
 
 ## Write CSV locally to computer
 write_csv(new_fhabs_dataframe, path = file.path(output_path, str_c("FHAB_BloomReport_1-", format(Sys.Date(), "%Y%m%d"), ".csv")))
+
 
 
 
