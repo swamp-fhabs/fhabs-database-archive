@@ -3,10 +3,10 @@
 @ECHO OFF
 
 :: Python script to retrieve ALL updates from the SQL database and export a .csv locally
-start python C:\Users\mtang\Documents\GitHub\fhabs-database-archive\Scripts\\ FHAB_BloomReport_to_Archive.py
+python "C:\Users\mtang\Documents\GitHub\fhabs-database-archive\Scripts\FHAB_BloomReport_to_Archive.py"
 
 
 :: Python script to retrieve ONLY updates approved to make public from the SQL database and export a .csv locally AND to Open Data Portal
-start python C:\Users\mtang\Documents\GitHub\fhabs-database-archive\Scripts\ FHAB_BloomReport.py
+python "C:\Users\mtang\Documents\GitHub\fhabs-database-archive\Scripts\FHAB_BloomReport.py"
 
 
