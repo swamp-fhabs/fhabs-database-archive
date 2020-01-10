@@ -10,3 +10,5 @@ python "C:\Users\mtang\Documents\GitHub\fhabs-database-archive\Scripts\FHAB_Bloo
 python "C:\Users\mtang\Documents\GitHub\fhabs-database-archive\Scripts\FHAB_BloomReport.py"
 
 
+:: R script to add new columns to create new labels for the Tableau web map
+"C:\Program Files\R\R-3.5.3\bin\Rscript" "C:\Users\mtang\Documents\GitHub\incident_web_map\Scripts\fhabs_incident_web_map.R"
